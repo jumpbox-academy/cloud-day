@@ -48,15 +48,16 @@ jobs:
         run: |
             npm install
             npm run generate
-            echo "\n\n====== GENERATE OUTPUT ======"
+            echo "====== GENERATE OUTPUT ======"
             ls .output/public
-            echo "\n\n============================="
+            echo "============================="
 
       - name: Package Artifact
         run: |
             cd .output/public
-            zip -r /tmp/${{ env.COMMIT_ID }}.zip .
-            ls /tmp/${{ env.COMMIT_ID }}.zip
+            mkdir -p /tmp/release
+            zip -r /tmp/release/${{ env.COMMIT_ID }}.zip .
+            ls /tmp/release/${{ env.COMMIT_ID }}.zip
 
       - name: Upload Artifact
         env:
@@ -65,7 +66,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: | 
             aws s3 ls
-            aws s3 sync /tmp/${{ env.COMMIT_ID }}.zip s3://${{ secrets.S3_BUCKET_DEV_ARTIFACT }}
+            aws s3 sync /tmp/release s3://${{ secrets.S3_BUCKET_DEV_ARTIFACT }}
 
       - name: Deploy
         run: |
