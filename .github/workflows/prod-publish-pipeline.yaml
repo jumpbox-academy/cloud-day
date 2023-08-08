@@ -55,7 +55,7 @@ jobs:
 
       - name: Rename Artifact
         run: |
-            mv /tmp/release/${{ env.COMMIT_ID }}.zip /tmp/release/${{ env.RELEASE_VERSION }}.zip
+            mv /tmp/release/${{ env.LATEST_ARTIFACT }} /tmp/release/${{ env.RELEASE_VERSION }}.zip
             ls /tmp/release
 
 
