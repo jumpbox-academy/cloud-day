@@ -69,6 +69,10 @@ jobs:
             aws s3 sync /tmp/release s3://${{ secrets.S3_BUCKET_DEV_ARTIFACT }}
 
       - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           cd .output/public
           aws s3 sync . s3://${{ secrets.S3_BUCKET_DEV }}
