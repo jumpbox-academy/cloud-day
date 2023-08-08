@@ -1,5 +1,5 @@
-name: jumpbox-website
-run-name: Jumpbox Website Pipeline
+name: jumpbox-website-dev
+run-name: Jumpbox Website Pipeline Development
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Reload Environments
         run: |
-          echo "COMMIT_ID=${GITHUB_SHA} >> $GITHUB_ENV
+          echo "COMMIT_ID=${GITHUB_SHA}" >> $GITHUB_ENV
             
       - name: Commit ID
         run: |
