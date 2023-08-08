@@ -20,7 +20,7 @@ jobs:
 
       - name: Install Tools
         run: |
-            apk add --update nodejs npm zip
+            apk add --update nodejs npm zip aws-cli
 
       - name: Node vesrion
         run: |
@@ -32,6 +32,10 @@ jobs:
             echo "Zip version: " 
             zip -v
 
+      - name: AWS CLI vesrion
+        run: |
+            echo "AWS CLI version: " $(aws --version)
+            
       - name: Commit ID
         run: |
             echo "COMMIT_ID: " ${GITHUB_SHA}
@@ -40,7 +44,9 @@ jobs:
         run: |
             npm install
             npm run generate
+            echo "\n\n====== GENERATE OUTPUT ======"
             ls .output/public
+            echo "\n\n============================="
 
       - name: Package Artifact
         run: |
@@ -48,8 +54,12 @@ jobs:
             zip -r /tmp/${GITHUB_SHA}.zip .
 
       - name: Upload Artifact
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
         run: | 
-            alias aws='docker run -it -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" -e AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION }}" amazon/aws-cli'
             aws s3 ls
             aws s3 sync /tmp/${GITHUB_SHA}.zip s3://${{ secrets.S3_BUCKET_DEV_ARTFACT }}
 
