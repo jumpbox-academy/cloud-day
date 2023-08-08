@@ -1,0 +1,81 @@
+name: jumpbox-website-prod
+run-name: Jumpbox Website Pipeline Deploy Production
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - '*' 
+
+jobs:
+  develop:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    container:
+      image: docker:24.0.2-git
+      - uses: actions/checkout@v2
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        
+      - name: Install Tools
+        run: |
+            apk add --update nodejs npm zip aws-cli
+
+      - name: Node vesrion
+        run: |
+            echo "Node version: " $(node -v)
+            echo "NPM version: " $(npm -v)
+
+      - name: Zip vesrion
+        run: |
+            echo "Zip version: " 
+            zip -v
+
+      - name: AWS CLI vesrion
+        run: |
+            echo "AWS CLI version: " $(aws --version)
+
+      - name: Reload Environments
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+            
+      - name: RELEASE_VERSION
+        run: |
+            echo "RELEASE_VERSION: " ${{ env.RELEASE_VERSION }}
+
+      - name: Download Package Artifact
+        run: |
+            mkdir -p /tmp/release
+            aws s3 cp s3://${{ secrets.S3_BUCKET_DEV }}/${{ env.RELEASE_VERSION }}.zip /tmp/release
+
+
+
+      - name: Upload Artifact
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: | 
+            aws s3 ls
+            aws s3 sync /tmp/release s3://${{ secrets.S3_BUCKET_PROD_ARTIFACT }}
+
+      - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          cd /tmp/release
+          unzip ${{ env.RELEASE_VERSION }}.zip
+          rm ${{ env.RELEASE_VERSION }}.zip
+          aws s3 sync . s3://${{ secrets.S3_BUCKET_PROD }}
+          
+      - name: Flush the CDN Cache
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_PROD }} --paths "/*"
