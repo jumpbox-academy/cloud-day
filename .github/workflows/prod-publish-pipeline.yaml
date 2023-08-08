@@ -1,0 +1,64 @@
+name: jumpbox-website-prod
+run-name: Jumpbox Website Pipeline Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  develop:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    container:
+      image: docker:24.0.2-git
+
+      - name: Install Tools
+        run: |
+            apk add --update nodejs npm zip aws-cli
+
+      - name: Node vesrion
+        run: |
+            echo "Node version: " $(node -v)
+            echo "NPM version: " $(npm -v)
+
+      - name: Zip vesrion
+        run: |
+            echo "Zip version: " 
+            zip -v
+
+      - name: AWS CLI vesrion
+        run: |
+            echo "AWS CLI version: " $(aws --version)
+
+      - name: Reload Environments
+        run: |
+          echo "COMMIT_ID=${{ github.event.before }}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$(npm info grunt version)" >> $GITHUB_ENV
+            
+      - name: Commit ID
+        run: |
+            echo "COMMIT_ID: " ${{ env.COMMIT_ID }}
+
+      - name: Download Package Artifact
+        run: |
+            mkdir -p /tmp/release
+            aws s3 cp s3://${{ secrets.S3_BUCKET_DEV }}/${{ env.COMMIT_ID }}.zip /tmp/release
+            ls /tmp/release
+
+      - name: Rename Artifact
+        run: |
+            mv /tmp/release/${{ env.COMMIT_ID }}.zip /tmp/release/${{ env.RELEASE_VERSION }}.zip
+            ls /tmp/release
+
+
+      - name: Upload Artifact
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: | 
+            aws s3 ls
+            aws s3 sync /tmp/release s3://${{ secrets.S3_BUCKET_PROD_ARTIFACT }}
