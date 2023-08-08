@@ -30,7 +30,7 @@ jobs:
       - name: Zip vesrion
         run: |
             echo "Zip version: " 
-            $(zip -v)
+            zip -v
 
       - name: Commit ID
         run: |
