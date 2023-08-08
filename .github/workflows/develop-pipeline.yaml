@@ -1,0 +1,68 @@
+name: jumpbox-website
+run-name: Jumpbox Website Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  develop:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    container:
+      image: docker:24.0.2-git
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Tools
+        run: |
+            apk add --update nodejs npm zip
+
+      - name: Node vesrion
+        run: |
+            echo "Node version: " $(node -v)
+            echo "NPM version: " $(npm -v)
+
+      - name: Zip vesrion
+        run: |
+            echo "Zip version: " 
+            $(zip -v)
+
+      - name: Commit ID
+        run: |
+            echo "COMMIT_ID: " ${{ vars.GITHUB_SHA }}
+
+      - name: Install Dependencies
+        run: |
+            npm install
+            npm run generate
+            ls .output/public
+
+      - name: Package Artifact
+        run: |
+            cd .output/public
+            zip -r /tmp/${{ vars.GITHUB_SHA }}.zip .
+
+      - name: Reload Environments
+        run: |
+          echo "COMMIT_ID: ${{ vars.GITHUB_SHA }}
+          echo "VERSION=$(cat version)" >> $GITHUB_ENV
+          
+      - name: Display Environments
+        run: |
+          echo "VERSION=${{ env.VERSION }}"
+
+      - name: Upload Artifact
+        run: | 
+            alias aws='docker run -it -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} amazon/aws-cli'
+            aws s3 ls
+            aws s3 sync /tmp/${{ vars.GITHUB_SHA }}.zip s3://${{ secrets.S3_BUCKET_ARTFACT }}
+
+      - name: Deploy
+        run: |
+          cd .output/public
+          aws s3 sync . s3://${{ secrets.S3_BUCKET_DEV }}
