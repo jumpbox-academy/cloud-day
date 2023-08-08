@@ -14,7 +14,7 @@ jobs:
         os: [ ubuntu-latest ]
     container:
       image: docker:24.0.2-git
-
+    steps:
       - name: Install Tools
         run: |
             apk add --update nodejs npm zip aws-cli
