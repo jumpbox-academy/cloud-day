@@ -8,7 +8,7 @@ on:
       - '*' 
 
 jobs:
-  develop:
+  deploy-with-tag:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
