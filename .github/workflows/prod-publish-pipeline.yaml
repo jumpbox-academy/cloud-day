@@ -40,7 +40,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           echo "COMMIT_ID=${{ github.event.before }}" >> $GITHUB_ENV
-          echo "RELEASE_VERSION=$(npm info grunt version)" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$(node -p 'require('./package.json').version')" >> $GITHUB_ENV
           echo "LATEST_ARTIFACT=$(aws s3 ls ${{ secrets.S3_BUCKET_DEV_ARTIFACT }} --recursive | sort | tail -n 1 | awk '{print $4}')" >> $GITHUB_ENV
             
       - name: Commit ID
