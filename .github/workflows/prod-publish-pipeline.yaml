@@ -37,7 +37,7 @@ jobs:
         run: |
           echo "COMMIT_ID=${{ github.event.before }}" >> $GITHUB_ENV
           echo "RELEASE_VERSION=$(npm info grunt version)" >> $GITHUB_ENV
-          echo "LATEST_ARTIFACT=$(aws s3 ls saritrat-dev-artifact --recursive | sort | tail -n 1 | awk '{print $4}')" >> $GITHUB_ENV
+          echo "LATEST_ARTIFACT=$(aws s3 ls ${{ secrets.S3_BUCKET_DEV }} --recursive | sort | tail -n 1 | awk '{print $4}')" >> $GITHUB_ENV
             
       - name: Commit ID
         run: |
@@ -50,14 +50,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
-            
             mkdir -p /tmp/release
-            aws s3 cp s3://${{ secrets.S3_BUCKET_DEV }}/${{ env.LATEST_ARTIFACT }} /tmp/release
+            aws s3 cp s3://${{ secrets.S3_BUCKET_DEV }}/${{ env.LATEST_ARTIFACT }} .
+            echo "====== GENERATE OUTPUT ======"
+            ls
+            mv ${{ env.LATEST_ARTIFACT }} /tmp/release
             ls /tmp/release
+            echo "============================="
 
       - name: Rename Artifact
         run: |
-            ls /tmp/release
+            ls /tmp
             mv /tmp/release/${{ env.LATEST_ARTIFACT }} /tmp/release/${{ env.RELEASE_VERSION }}.zip
 
 
