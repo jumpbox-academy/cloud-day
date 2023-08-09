@@ -22,12 +22,7 @@ jobs:
         
       - name: Install Tools
         run: |
-            apk add --update nodejs npm zip aws-cli
-
-      - name: Node vesrion
-        run: |
-            echo "Node version: " $(node -v)
-            echo "NPM version: " $(npm -v)
+            apk add --update zip aws-cli
 
       - name: Zip vesrion
         run: |
@@ -47,20 +42,17 @@ jobs:
             echo "RELEASE_VERSION: " ${{ env.RELEASE_VERSION }}
 
       - name: Download Package Artifact
-        run: |
-            mkdir -p /tmp/release
-            aws s3 cp s3://${{ secrets.S3_BUCKET_DEV }}/${{ env.RELEASE_VERSION }}.zip /tmp/release
-
-
-
-      - name: Upload Artifact
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+            mkdir -p /tmp/release
+            aws s3 cp s3://${{ secrets.S3_BUCKET_PROD_ARTIFACT }}/${{ env.RELEASE_VERSION }}.zip /tmp/release
+
+      - name: Extract
         run: | 
-            aws s3 ls
-            aws s3 sync /tmp/release s3://${{ secrets.S3_BUCKET_PROD_ARTIFACT }}
+            unzip /tmp/release/${{ env.RELEASE_VERSION }}.zip
 
       - name: Deploy
         env:
